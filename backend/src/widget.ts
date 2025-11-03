@@ -468,41 +468,50 @@ export class Widget {
 			WARTIMER_INTERACTION_SPLIT
 		);
 	}
-	private getButtons(disableToggle = false, disableVoice = false): ActionRowBuilder<ButtonBuilder> {
-		const buttonConfigs: (Partial<Omit<ButtonComponentData, 'customId'>> & {
-			id: string;
-		})[] = [
-			{
-				id: EWidgetButtonID.TEXT,
-				label: this.textState ? '📝' : '📝',
-				style: this.textState ? ButtonStyle.Danger : ButtonStyle.Success,
-				disabled: disableToggle
-			},
-			{
-				id: EWidgetButtonID.VOICE,
-				label: this.voiceState ? '🔇' : '🔊',
-				style: this.voiceState ? ButtonStyle.Danger : ButtonStyle.Success,
-				disabled: disableVoice
-			},
-			{
-				id: EWidgetButtonID.SETTINGS,
-				label: '⚙️',
-				style: ButtonStyle.Primary
-			}
-		];
+    private getButtons(
+      disableToggle = false,
+      disableVoice = false
+    ): ActionRowBuilder<ButtonBuilder> {
+      // Egyszerű, explicit konfig típus
+      type SimpleButtonConfig = {
+        id: EWidgetButtonID;     // enum, nem sima string
+        label: string;
+        style: ButtonStyle;
+        disabled?: boolean;
+      };
 
-		const actionRow = new ActionRowBuilder<ButtonBuilder>();
-		for (const config of buttonConfigs) {
-			actionRow.addComponents(
-				new ButtonBuilder()
-					.setCustomId(this.getCustomId(config.id))
-					.setLabel(config.label || '<Missing>')
-					.setStyle(config.style || ButtonStyle.Primary)
-					.setDisabled(config.disabled || false) // Ensure the value is boolean
-			);
-		}
-		return actionRow;
-	}
+      const buttonConfigs: SimpleButtonConfig[] = [
+        {
+          id: EWidgetButtonID.TEXT,
+          label: this.textState ? '📝' : '📝',
+          style: this.textState ? ButtonStyle.Danger : ButtonStyle.Success,
+          disabled: disableToggle
+        },
+        {
+          id: EWidgetButtonID.VOICE,
+          label: this.voiceState ? '🔇' : '🔊',
+          style: this.voiceState ? ButtonStyle.Danger : ButtonStyle.Success,
+          disabled: disableVoice
+        },
+        {
+          id: EWidgetButtonID.SETTINGS,
+          label: '⚙️',
+          style: ButtonStyle.Primary
+        }
+      ];
+
+      const actionRow = new ActionRowBuilder<ButtonBuilder>();
+      for (const cfg of buttonConfigs) {
+        actionRow.addComponents(
+          new ButtonBuilder()
+            .setCustomId(this.getCustomId(String(cfg.id))) // biztosan string
+            .setLabel(cfg.label)
+            .setStyle(cfg.style)
+            .setDisabled(!!cfg.disabled)
+        );
+      }
+      return actionRow;
+    }
 
 	public async recreateMessage(): Promise<void> {
 		this.isResetting = true;

@@ -1,0 +1,25 @@
+services:
+  mongo:
+    image: mongo:6
+    container_name: respawn-mongo
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+
+  app:
+    build: .
+    container_name: respawn-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # fontos!
+      - MONGODB_URI=mongodb://mongo:27017/respawntimer
+      - TZ=Europe/Budapest
+    depends_on:
+      - mongo
+
+volumes:
+  mongo_data:
