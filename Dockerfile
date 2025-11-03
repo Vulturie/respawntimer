@@ -1,47 +1,40 @@
 ### Build Step
-# pull the Node.js Docker image
-FROM python:3-alpine as builder
+FROM python:3-alpine AS builder
 
-# Add node and pnpm
-RUN apk add --update npm
+# Node + pnpm + build eszközök (node-gyp-hez is)
+RUN apk add --no-cache nodejs npm git python3 make g++ libtool autoconf automake
 RUN npm install -g pnpm
-RUN apk add libtool autoconf automake g++ make
 
-# change working directory
 WORKDIR /usr/src/app
 
-# copy the package.json files from local machine to the workdir in container
-COPY backend/package*.json .
+# monorepo-struktúrád szerint a backend mappából dolgozunk
+COPY backend/package*.json ./
+RUN pnpm install --frozen-lockfile || pnpm install
 
-# run pnpm install in our local machine
-RUN pnpm install
-
-# copy the generated modules and all other files to the container
-COPY backend .
-
-# build the application
+# források bemásolása és build
+COPY backend ./
 RUN pnpm run build
 
 ### Serve Step
-# pull the Node.js Docker image
-FROM python:3-alpine
+FROM python:3-alpine AS app
 
-# Add node and pnpm
-RUN apk add --update npm
-RUN npm install -g pnpm
+# Runtime-hoz kell a nodejs + ffmpeg
+RUN apk add --no-cache nodejs npm ffmpeg
 
-# change working directory
 WORKDIR /app
 
-# copy files from previous step
+# buildelt kimenet + runtime fájlok
 COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/audio ./audio
-COPY --from=builder /usr/src/app/package.json .
+COPY --from=builder /usr/src/app/package.json ./
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 
-ENV NODE_ENV prod
+ENV NODE_ENV=production
+# prism-media / @discordjs/voice így biztosan megtalálja
+ENV FFMPEG_PATH=/usr/bin/ffmpeg
+ENV TZ=Europe/Budapest
 
-EXPOSE 8080
+# Ha nem szolgálsz HTTP-t, az EXPOSE felesleges, de nem zavar:
+# EXPOSE 8080
 
-# the command that starts our app
-ENTRYPOINT [ "node", "./dist/src/index.js" ]
+ENTRYPOINT ["node", "./dist/src/index.js"]

@@ -1,8 +1,14 @@
 services:
   mongo:
-    image: mongo:6
-    container_name: respawn-mongo
+    image: mongo:4.4.18
+    container_name: mongo
     restart: unless-stopped
+    command: ["--bind_ip_all"]
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     volumes:
       - mongo_data:/data/db
     ports:
@@ -15,9 +21,9 @@ services:
     env_file:
       - .env
     environment:
-      # fontos!
-      - MONGODB_URI=mongodb://mongo:27017/respawntimer
       - TZ=Europe/Budapest
+      # Figyelem: a hostnév a fenti service neve -> "mongo"
+      - MONGODB_URI=mongodb://mongo:27017/respawntimer
     depends_on:
       - mongo
 
