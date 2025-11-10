@@ -222,11 +222,12 @@ class AudioManager extends Manager<Extended> {
 
 	private async connect(channel: VoiceBasedChannel): Promise<VoiceConnection> {
 		await checkChannelPermissions(channel, ['ViewChannel', 'Connect', 'Speak']);
-		const connection = joinVoiceChannel({
-			guildId: channel.guild.id,
-			channelId: channel.id,
-			adapterCreator: channel.guild.voiceAdapterCreator as unknown as DiscordGatewayAdapterCreator
-		});
+                const connection = joinVoiceChannel({
+                        guildId: channel.guild.id,
+                        channelId: channel.id,
+                        adapterCreator: channel.guild.voiceAdapterCreator as unknown as DiscordGatewayAdapterCreator,
+                        daveEncryption: false
+                });
 		connection.on(VoiceConnectionStatus.Disconnected, () => connection.destroy());
 		return connection;
 	}
